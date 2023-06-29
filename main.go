@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/erkanzileli/kotification/pkg/controller"
+	"github.com/erkanzileli/kotification/pkg/genericcontroller"
 	"github.com/erkanzileli/kotification/pkg/reconciler"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"log"
@@ -33,7 +33,7 @@ func main() {
 		log.Fatalf("failed to create a new manager for creating controllers: %+v", err)
 	}
 
-	gvkController, err := controller.NewUnmanaged(mgr, gvk, controller.Options{
+	gvkController, err := genericcontroller.NewUnmanaged(mgr, gvk, genericcontroller.Options{
 		Reconciler: reconciler.NewGenericReconciler(gvk, expression, mgr.GetCache()),
 	})
 
