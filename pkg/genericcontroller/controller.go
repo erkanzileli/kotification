@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/sirupsen/logrus"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"log"
@@ -46,12 +47,17 @@ type genericController struct {
 }
 
 func NewUnStarted(mgr manager.Manager, gvk schema.GroupVersionKind, reconciler reconcile.Reconciler) (Controller, error) {
+	maxConcurrentReconciles := mgr.GetControllerOptions().MaxConcurrentReconciles
+	if maxConcurrentReconciles == 0 {
+		maxConcurrentReconciles = 1
+	}
+
 	return &genericController{
 		manager:                 mgr,
 		resourceGVK:             gvk,
 		reconciler:              reconciler,
 		name:                    gvk.String(),
-		maxConcurrentReconciles: mgr.GetControllerOptions().MaxConcurrentReconciles,
+		maxConcurrentReconciles: maxConcurrentReconciles,
 	}, nil
 }
 
@@ -64,7 +70,9 @@ func (c *genericController) Start(ctx context.Context) error {
 
 	c.initMetrics()
 
-	c.manager.GetScheme().AddKnownTypeWithName(c.resourceGVK, &unstructured.Unstructured{})
+	if !APIExists(c.manager.GetRESTMapper(), c.resourceGVK) {
+		c.manager.GetScheme().AddKnownTypeWithName(c.resourceGVK, &unstructured.Unstructured{})
+	}
 
 	informerForGVK, err := c.manager.GetCache().GetInformerForKind(ctx, c.resourceGVK)
 	if err != nil {
@@ -210,4 +218,9 @@ type reconcileIDKey struct{}
 
 func addReconcileID(ctx context.Context, reconcileID types.UID) context.Context {
 	return context.WithValue(ctx, reconcileIDKey{}, reconcileID)
+}
+
+func APIExists(restMapper meta.RESTMapper, gvk schema.GroupVersionKind) bool {
+	_, err := restMapper.RESTMapping(gvk.GroupKind(), gvk.Version)
+	return err == nil
 }

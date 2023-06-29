@@ -1,0 +1,26 @@
+apiVersion: alerting.kotification.io/v1alpha1
+kind: Alert
+metadata:
+  name: pod-status-pending
+  namespace: default
+spec:
+  resourceGVK:
+    group: ""
+    version: v1
+    kind: Pod
+  objectFilters:
+    - path: /metadata/name
+      operator: Eq
+      value: my-pod
+  condition:
+    expression: status.phase == Pending
+    for: 5m
+status:
+  status: firing
+  objects:
+    - name: my-pod
+      namespace: default
+      condition:
+        met: false
+        since: "29/06/2023-13:43:46" # 2m before
+        expression: true

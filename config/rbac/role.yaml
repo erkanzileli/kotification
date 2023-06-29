@@ -1,0 +1,32 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: manager-role
+rules:
+- apiGroups:
+  - alerting.kotification.io
+  resources:
+  - alerts
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - alerting.kotification.io
+  resources:
+  - alerts/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - alerting.kotification.io
+  resources:
+  - alerts/status
+  verbs:
+  - get
+  - patch
+  - update

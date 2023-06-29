@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/erkanzileli/kotification/pkg/genericcontroller"
-	"github.com/erkanzileli/kotification/pkg/reconciler"
+	"github.com/erkanzileli/kotification/pkg/genericreconciler"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"log"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -12,11 +12,11 @@ import (
 
 var (
 	gvk = schema.GroupVersionKind{
-		Group:   "networking.istio.io",
-		Version: "v1alpha3",
-		Kind:    "VirtualService",
+		Group:   "apps",
+		Version: "v1",
+		Kind:    "Deployment",
 	}
-	expression = `any(spec.gateways, "mesh")`
+	expression = `spec.replicas > 1`
 )
 
 func main() {
@@ -33,9 +33,7 @@ func main() {
 		log.Fatalf("failed to create a new manager for creating controllers: %+v", err)
 	}
 
-	gvkController, err := genericcontroller.NewUnmanaged(mgr, gvk, genericcontroller.Options{
-		Reconciler: reconciler.NewGenericReconciler(gvk, expression, mgr.GetCache()),
-	})
+	gvkController, err := genericcontroller.NewUnStarted(mgr, gvk, genericreconciler.NewGenericReconciler(gvk, expression, mgr.GetCache()))
 
 	if err = mgr.Add(gvkController); err != nil {
 		log.Fatalf("failed to register controller to manager: %+v", err)
